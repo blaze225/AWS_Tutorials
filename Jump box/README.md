@@ -35,6 +35,7 @@
     3. Enable autoassign public IP as we need the NAT to internet access.
     4. Create a new Security Group (Virtual Firewall) which allows SSH.
     5. We dont need a key-pair here as we wont be connecting to the NAT.
+    6. **Disable Source/Dest. Check** by selecting the instance then Actions -> Networking -> Change Source/Dest. Check (This is needed as the NAT is not the source/destination of any traffic)
 ![alt text](NAT_ec2.png)
 
 ## Step 3: Configure Security Groups and Routes
@@ -43,10 +44,16 @@
     * Go to Subnets -> Private -> Route table tab -> Edit route table association and change the route table ID to the newly created one.
 ![alt text](Private_route_table.png)
 
-2. Configuring the security group for the private server so as to only allow connections from the Jump box
-    * Go to EC2 Dashboard -> Instances -> <*Your Private Instance*> -> Description -> Click on the Security Group. You will be taken to the security group settings.
+2. Configure the security group for the private server so as to only allow connections from the Jump box
+    * Go to EC2 Dashboard -> Instances -> < *Your Private Instance* > -> Description -> Click on the Security Group. You will be taken to the security group settings.
     * There select the Inbound tab -> Edit and type 'sg' in the Source Column to get a list of security groups. Select the Jump box one.
 ![alt text](SG_private_server.png)
+
+3. Configure the security group for the NAT so that it allows all incoming traffic from within the VPC and outgoing traffic to the Internet
+    * Go to the security group settings of your NAT. There go to the tab Inbound -> Edit , change the Type to "All traffic" and in Source enter your VPC's CIDR
+    ![alt text](NAT_SG_inbound.png)
+    * Go to the tab Outbound -> Edit , change the Type to "All traffic" and in Source enter **0.0.0.0/0** (which means all IPs)
+    ![alt text](NAT_SG_outbound.png)
 
 ## Step 4: Connect to the Private Server
 1. Connect to the JumpBox via **ssh**
@@ -57,3 +64,10 @@
 ![alt text](scp_keypair.png)
 3. SSH to the Private server using its keypair
 ![alt text](SSH_private_server.png)
+
+## Step 5: Check Internet Access
+1. Check Internet access using the command **ping** : `ping google.com`
+![alt text](ping.png)
+2. You can also check what route the above ping request took, by using the command **traceroute** : `traceroute google.com`
+* The first hop will be through the NAT (**192.168.1.115** in my case)
+![alt text](traceroute.png)
